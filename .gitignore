@@ -1,0 +1,7 @@
+.*
+.zed/
+assets/
+__pycache__/
+*.pyc
+!/.gitignore
+
