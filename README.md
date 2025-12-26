@@ -1,10 +1,30 @@
 # BareGPT: A minimalist Transformer in NumPy
 
-BareGPT is a Generative Pretrained Transformer developed for educational purposes, inspired by nanoGPT and the foundations of GPT-1 (Radford et al., 2018).
+BareGPT is a Generative Pretrained Transformer developed for educational purposes, inspired by [nanoGPT](https://github.com/karpathy/nanoGPT) and the foundations of [GPT-1 (Radford et al., 2018)](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf).
 
-This project deliberately avoids deep learning frameworks: everything from the forward pass to the backpropagation is implemented by hand in less than 500 lines of pure NumPy. The code is extensively commented and designed to understand the inner workings of a transformer.
+This project deliberately avoids deep learning frameworks: everything from the forward pass to the manual backpropagation is implemented from scratch in **less than 500 lines of NumPy**.
 
 Because it does not rely on specific frameworks or specialized hardware, the model is ready to use immediately. A pre-trained weights file is included for instant testing, and a full training run can be completed on a standard CPU in under 30 minutes.
+
+## Quick Start
+
+The only dependency is NumPy:
+
+```bash
+pip install numpy
+```
+
+To run the model:
+
+```bash
+python3 train.py
+```
+
+If `data/weights.pkl` is detected, the model will load the pre-trained weights and start streaming text according to patterns learned from the training material. If no weights are found, it will begin training on the provided corpus then proceed to inference mode.
+
+The model is trained by default on a 1MB corpus of Shakespeare’s works, although this can be replaced with any text file. The included pre-trained weights were obtained after 1,500 training steps, reaching a final loss of 1.45 and yielding coherent text generation.
+
+Hyperparameters are available at the beginning of `train.py` to experiment with.
 
 ## How it works
 
@@ -14,32 +34,22 @@ Mathematically, the model generates three vectors for every token: a Query (what
 
 The training engine includes a manual implementation of the Adam optimizer with global gradient clipping for stability. During inference, the model streams its output character by character using Top-K sampling and temperature scaling to ensure fluid and varied text generation.
 
-## Quick Start
+BareGPT is a **character-level** language model. Unlike industrial LLMs that use complex tokenizers (BPE), it treats every single character as a token. This makes the internal logic much easier to follow as the vocabulary directly maps to the alphabet and symbols found in the text.
 
-The only requirement is numpy. You can launch the text generation immediately using the pre-trained Shakespeare weights:
+## Sample output
 
-Requirement:
-
-```bash
-pip install numpy
-```
-
-Training and generation:
-
-```bash
-python3 train.py
-```
-
-The model is trained by default on a 1MB corpus of Shakespeare’s works, although this can be replaced with any text file.
-
-The included pre-trained weights were obtained after 1,500 training steps, reaching a final loss of 1.45 and yielding coherent text generation.
-
-After training, the model generates a stream of characters according to patterns learned from the input data.
-
-A typical training output looks like this:
+A typical output with training looks like this:
 
 ```
-Model parameters: 1,643,585
+Model configuration:
+- d_model:           256
+- n_layers:            2
+- n_heads:             4
+- batch_size:         16
+- block_size:        128
+Total params:  1,643,585
+
+Training...
 step 1, loss=5.447206 (0.46s)
 step 100, loss=2.565365 (43.44s)
 step 200, loss=2.571308 (44.86s)
@@ -49,7 +59,9 @@ step 500, loss=2.125059 (45.04s)
 step 600, loss=2.055819 (45.32s)
 step 700, loss=2.009935 (45.21s)
 Weights saved to weights.pkl
+
 Output:
+
 The danger of and marketh friends of the cannon.
 
 CLAUDIO:
@@ -83,4 +95,4 @@ DUKE OF YORK:
 I will not faither now to be them all thy gave?
 ```
 
-A set of hyperparameters is also available at the beginning of train.py to experiment with.
+After training, the model, despite being character-level, successfully learns to spell words, manage indentation, and respect the structure of a theatrical play.
