@@ -3,5 +3,5 @@
 assets/
 __pycache__/
 *.pyc
+*.png
 !/.gitignore
-
