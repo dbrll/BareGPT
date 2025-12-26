@@ -10,8 +10,8 @@ import utils
 ####  HYPERPARAMETERS  ####
 
 d_model = 256
-n_layer = 2
-n_head = 4
+n_layers = 2
+n_heads = 4
 batch_size = 16
 block_size = 128
 epochs = 700
@@ -52,6 +52,7 @@ def train(params, epochs, learning_rate):
     m, v = engine.adam_init(params)
 
     last_time = time.perf_counter()
+    print("Training...")
     for step in range(1, epochs + 1):
         X_ids, Y_ids = utils.get_batch(encoded_data, block_size, batch_size)
 
@@ -85,16 +86,23 @@ Initialization & Preparation
 
 text = prepare_input("data/shakespeare.txt")
 encoded_data, vocab = tokenize_data(text)
+vocab_size = len(vocab)
 
 # Total parameters calculation
 n_params = (
-    (len(vocab) * d_model)
+    (vocab_size * d_model)
     + (block_size * d_model)
-    + n_layer
+    + n_layers
     * (4 * d_model**2 + 4 * d_model + 2 * d_model * (4 * d_model) + 5 * d_model)
-    + (d_model * len(vocab) + len(vocab))
+    + (d_model * vocab_size + vocab_size)
 )
-print(f"Model parameters: {n_params:,}")
+print("Model configuration:")
+print(f"- d_model:    {d_model:>10}")
+print(f"- n_layers:   {n_layers:>10}")
+print(f"- n_heads:    {n_heads:>10}")
+print(f"- batch_size: {batch_size:>10}")
+print(f"- block_size: {block_size:>10}")
+print(f"Total params: {n_params:>10,}\n")
 
 # Load trained weights if they exist
 try:
@@ -102,7 +110,7 @@ try:
         params = pickle.load(f)
     print("Weights loaded from weights.pkl")
 except FileNotFoundError:
-    params = model.init_weights(d_model, block_size, len(vocab), n_head, n_layer)
+    params = model.init_weights(d_model, block_size, len(vocab), n_heads, n_layers)
     train(params, epochs, learning_rate)
 
 # Inference & Generation
@@ -110,7 +118,7 @@ n = len(encoded_data)
 L = 32
 start = np.random.randint(0, n - L + 1)
 sample = text[start : start + L]
-print("Output:")
+print("\nOutput:\n")
 
 for char in model.generate_stream(sample, vocab, params, max_new_tokens=2048):
     print(char, end="", flush=True)

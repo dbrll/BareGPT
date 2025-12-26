@@ -46,7 +46,7 @@ def adam_step(
     # 2. Parameter Updates
     updates = {}
     for k in params.keys():
-        # Skip hyperparameters stored in params (like n_heads) that don't have gradients
+        # Skip hyperparameters stored in params (like n_headss) that don't have gradients
         g = grads.get(k)
         if g is None:
             continue
@@ -102,7 +102,7 @@ def backward_and_get_grads(cache):
 
     B, T, D = Y.shape
     V = probs.shape[-1]
-    n_layer = len(layer_caches)
+    n_layers = len(layer_caches)
 
     # ---- 2) Output Layer Gradients ----
     # dlogits = (probs - one_hot) / (B * T)
@@ -123,7 +123,7 @@ def backward_and_get_grads(cache):
     }
 
     # ---- 3) Transformer Blocks (Reverse Cascade) ----
-    for i in reversed(range(n_layer)):
+    for i in reversed(range(n_layers)):
         layer_cache = layer_caches[i]
 
         (
@@ -355,7 +355,7 @@ def backward_attention(d_att_out, cache):
     W_q, W_k, W_v, W_o = cache["W_q"], cache["W_k"], cache["W_v"], cache["W_o"]
 
     B, T, D = X.shape
-    H = cache["n_head"]
+    H = cache["n_heads"]
     Hd = D // H
 
     # 2. Backprop through Output Projection (W_o) and Concatenation

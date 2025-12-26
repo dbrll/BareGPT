@@ -15,20 +15,20 @@ MIT Licence
 """
 
 
-def init_weights(d_model, block_size, vocab_size, n_head, n_layer):
+def init_weights(d_model, block_size, vocab_size, n_heads, n_layers):
     """
     Initializes all model weights for a multi-layer Transformer.
     """
     params = {
-        "n_head": n_head,
+        "n_heads": n_heads,
         "d_model": d_model,
         "block_size": block_size,
         "vocab_size": vocab_size,
-        "n_layer": n_layer,
+        "n_layers": n_layers,
     }
 
     # Initialize weights for each Transformer block
-    for i in range(n_layer):
+    for i in range(n_layers):
         # 1. Attention weights for layer i
         params[f"W_q_{i}"] = utils.xavier_init((d_model, d_model))
         params[f"W_k_{i}"] = utils.xavier_init((d_model, d_model))
@@ -137,7 +137,7 @@ def multi_head_attention(X, params, layer_idx):
         H (Head): number of attention heads
     """
     B, T, D = X.shape
-    H = params["n_head"]
+    H = params["n_heads"]
 
     # 1. Retrieve weights for this specific layer
     W_q = params[f"W_q_{layer_idx}"]
@@ -207,7 +207,7 @@ def multi_head_attention(X, params, layer_idx):
         "W_k": W_k,
         "W_v": W_v,
         "W_o": W_o,
-        "n_head": H,
+        "n_heads": H,
         "head_dim": Hd,
         "layer_idx": layer_idx,
     }
@@ -266,7 +266,7 @@ def transformer_block(X, params, layer_idx):
         X (ndarray): Input hidden states of shape (Batch, Time, Dimension).
         params (dict): Global dictionary containing all model weights.
                        Uses 'layer_idx' to fetch layer-specific parameters.
-        layer_idx (int): The index of this layer in the stack (0 to n_layer-1).
+        layer_idx (int): The index of this layer in the stack (0 to n_layers-1).
 
     Returns:
         Y (ndarray): Output hidden states of shape (Batch, Time, Dimension).
@@ -333,7 +333,7 @@ def forward(X, targets, params, X_ids):
             plus layer-specific caches and input metadata.
     """
 
-    n_layer = params["n_layer"]
+    n_layers = params["n_layers"]
     W_out = params["W_out"]
     b_out = params["b_out"]
 
@@ -342,7 +342,7 @@ def forward(X, targets, params, X_ids):
 
     # Process through each Transformer block sequentially
     current_h = X
-    for i in range(n_layer):
+    for i in range(n_layers):
         # We pass the layer index i so transformer_block knows which weights to use
         current_h, cache_block, _ = transformer_block(current_h, params, layer_idx=i)
         layer_caches.append(cache_block)
@@ -389,7 +389,7 @@ def forward_no_loss(X, params):
     if X.ndim == 2:
         X = X[np.newaxis, :, :]
 
-    n_layer = params["n_layer"]
+    n_layers = params["n_layers"]
     W_out = params["W_out"]
     b_out = params["b_out"]
 
@@ -397,7 +397,7 @@ def forward_no_loss(X, params):
     current_h = X
 
     # Process through each Transformer block sequentially
-    for i in range(n_layer):
+    for i in range(n_layers):
         # We pass layer_idx so the block knows which indexed weights to use
         current_h, cache_block, _ = transformer_block(current_h, params, layer_idx=i)
         layer_caches.append(cache_block)
