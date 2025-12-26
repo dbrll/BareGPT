@@ -120,5 +120,14 @@ start = np.random.randint(0, n - L + 1)
 sample = text[start : start + L]
 print("\nOutput:\n")
 
-for char in model.generate_stream(sample, vocab, params, max_new_tokens=2048):
+viz_info = {}
+gen = model.generate_stream(
+    sample, vocab, params, max_new_tokens=1024, out_info=viz_info
+)
+for char in gen:
     print(char, end="", flush=True)
+
+print("\n---")
+
+# Attention visualization. Requires matplotlib
+utils.plot_multi_head_attention(vocab, viz_info)

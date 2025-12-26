@@ -212,7 +212,7 @@ def multi_head_attention(X, params, layer_idx):
         "layer_idx": layer_idx,
     }
 
-    return att_probs, att_out, cache
+    return att_out, cache
 
 
 def mlp_forward(X, params, layer_idx):
@@ -279,7 +279,7 @@ def transformer_block(X, params, layer_idx):
     X_norm, ln1_cache = layernorm_forward(X)
 
     # We pass layer_idx so attention knows which W_q_i, W_k_i... to take
-    att_probs, att_matrix, att_cache = multi_head_attention(X_norm, params, layer_idx)
+    att_matrix, att_cache = multi_head_attention(X_norm, params, layer_idx)
     X2 = X + att_matrix  # Residual
 
     # 2. Feed-Forward Sub-layer
@@ -382,7 +382,7 @@ def forward(X, targets, params, X_ids):
 def forward_no_loss(X, params):
     """
     Forward pass without targets or cross-entropy calculation.
-    Used for inference and text generation.
+    This forward pass is used for inference and text generation, not training.
     Returns: logits, probs, and the list of layer caches.
     """
     # Add a batch dimension if it's missing (B=1, T, D)
@@ -412,9 +412,12 @@ def forward_no_loss(X, params):
     exp_logits = np.exp(logits_shifted)
     probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
 
+    # This will be used for the attention visualization
+    att_probs = [lc["att"]["att_probs"] for lc in layer_caches]
+
     # Return the squeezed results for easier use in the generation loop
     # If B=1, we can return shapes (T, vocab)
-    return logits[0], probs[0], layer_caches
+    return logits[0], probs[0], layer_caches, att_probs
 
 
 def backward_pass(cache, params):
@@ -536,7 +539,9 @@ def output_layer_backward(cache):
     return dW_out, db_out, dY
 
 
-def generate_stream(prompt, vocab, params, max_new_tokens=512, k=20, temperature=0.8):
+def generate_stream(
+    prompt, vocab, params, max_new_tokens=512, k=20, temperature=0.8, out_info=None
+):
     """
     Generates text token by token (streaming) using top-k sampling and temperature.
     yields: Each newly generated character.
@@ -558,7 +563,7 @@ def generate_stream(prompt, vocab, params, max_new_tokens=512, k=20, temperature
         X = tok_emb + pos_emb_block
 
         # 4) Forward pass without loss
-        _, probs, _ = forward_no_loss(X, params)
+        _, probs, _, att_probs = forward_no_loss(X, params)
 
         # 5) Get probabilities of the very last token
         p = probs[-1].astype(np.float64)
@@ -578,6 +583,11 @@ def generate_stream(prompt, vocab, params, max_new_tokens=512, k=20, temperature
         else:
             p /= p.sum() + 1e-12
             next_id = np.random.choice(vocab_size, p=p)
+
+        # Saving some information for the attention visualization
+        if out_info is not None:
+            out_info["attentions"] = att_probs
+            out_info["ids"] = ids[:]
 
         # 8) Update sequence and yield the new character
         ids.append(int(next_id))
