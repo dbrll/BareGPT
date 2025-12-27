@@ -8,10 +8,10 @@ Because it does not rely on specific frameworks or specialized hardware, the mod
 
 ## Quick Start
 
-The only dependency is NumPy:
+The only required dependency is NumPy. Installing Matplotlib allows to optionally plot the multi-head attention.
 
 ```bash
-pip install numpy
+pip install numpy matplotlib
 ```
 
 To run the model:
@@ -30,11 +30,32 @@ Hyperparameters are available at the beginning of `train.py` to experiment with.
 
 BareGPT uses a Decoder-only transformer architecture, learning to predict the next character by attending to the past through a Causal Self-Attention mechanism.
 
-Mathematically, the model generates three vectors for every token: a Query (what it is looking for), a Key (what it contains), and a Value (the actual information). By computing the dot product between Queries and Keys, the model determines an attention score, which dictates how much weight to give to each past token's Value when predicting the next one.
+Mathematically, the model generates three vectors for every token: a _Query_ (what it is looking for), a _Key_ (what it contains), and a _Value_ (the actual information). By computing the dot product between Queries and Keys, the model determines an attention score, which dictates how much weight to give to each past token's Value when predicting the next one.
 
 The training engine includes a manual implementation of the Adam optimizer with global gradient clipping for stability. During inference, the model streams its output character by character using Top-K sampling and temperature scaling to ensure fluid and varied text generation.
 
 BareGPT is a **character-level** language model. Unlike industrial LLMs that use complex tokenizers (BPE), it treats every single character as a token. This makes the internal logic much easier to follow as the vocabulary directly maps to the alphabet and symbols found in the text.
+
+## Attention visualization
+
+BareGPT makes it easy to extract and visualize the internal "thought process" of the Transformer using its attention maps.
+
+The `inference_inspect.ipynb` notebook allows to generate text step-by-step, inspect the top candidate probabilities for each inference, and render real-time attention heatmaps.
+
+The generated heatmap (`multi_head_attention.png`) shows how the model weighs the importance of previous tokens (the Keys) when predicting the next character (the Query).
+
+<img width="1200" height="1000" alt="multi_head_attention" src="https://github.com/user-attachments/assets/31d8502e-c230-4ac5-b1d8-8dee78d7cb31" />
+
+**What to look for in the visualization:**
+
+- Causal Masking: The empty upper-right triangle confirms the model is causal: it never "cheats" by looking at future characters.
+- Head Specialization: Each head focuses on different patterns:
+  - Diagonal patterns: The head is looking at the immediate local context (the previous characters).
+  - Vertical lines: The head is acting as a "global anchor", often focusing on structural elements like periods, spaces or newlines to maintain sentence coherence.
+  - Sparse blocks: The head is searching for long-range dependencies, such as matching a closing bracket or maintaining a subject-verb relationship.
+
+On the visualization above, head 1 acts as a global anchor, focusing on punctuation and spaces to structure the sentence.
+Heads 2, 3, and 4 show strong diagonal activation, tracking the immediate local context for character-level consistency.
 
 ## Sample output
 
@@ -93,6 +114,9 @@ Fasticial is I had seek to children's hands.
 
 DUKE OF YORK:
 I will not faither now to be them all thy gave?
+---
+
+Multi-head visualization saved to multi_head_attention.png
 ```
 
 After training, the model, despite being character-level, successfully learns to spell words, manage indentation, and respect the structure of a theatrical play.
