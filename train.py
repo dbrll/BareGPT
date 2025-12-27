@@ -34,7 +34,7 @@ def tokenize_data(data):
     return ids, vocab
 
 
-def train(params, epochs, learning_rate):
+def train(encoded_data, params, epochs, learning_rate):
     """
     Training loop
     Functions flow:
@@ -77,57 +77,56 @@ def train(params, epochs, learning_rate):
     print("Weights saved to weights.pkl")
 
 
-"""
-Initialization & Preparation
-    prepare_input → tokenize_data
-    init_weights → xavier_init
-    retrieve trained weights or start training
-"""
+if __name__ == "__main__":
+    """
+    Initialization & Preparation
+        prepare_input → tokenize_data
+        init_weights → xavier_init
+        retrieve trained weights or start training
+    """
 
-text = prepare_input("data/shakespeare.txt")
-encoded_data, vocab = tokenize_data(text)
-vocab_size = len(vocab)
+    text = prepare_input("data/shakespeare.txt")
+    encoded_data, vocab = tokenize_data(text)
+    vocab_size = len(vocab)
 
-# Total parameters calculation
-n_params = (
-    (vocab_size * d_model)
-    + (block_size * d_model)
-    + n_layers
-    * (4 * d_model**2 + 4 * d_model + 2 * d_model * (4 * d_model) + 5 * d_model)
-    + (d_model * vocab_size + vocab_size)
-)
-print("Model configuration:")
-print(f"- d_model:    {d_model:>10}")
-print(f"- n_layers:   {n_layers:>10}")
-print(f"- n_heads:    {n_heads:>10}")
-print(f"- batch_size: {batch_size:>10}")
-print(f"- block_size: {block_size:>10}")
-print(f"Total params: {n_params:>10,}\n")
+    # Total parameters calculation
+    n_params = (
+        (vocab_size * d_model)
+        + (block_size * d_model)
+        + n_layers
+        * (4 * d_model**2 + 4 * d_model + 2 * d_model * (4 * d_model) + 5 * d_model)
+        + (d_model * vocab_size + vocab_size)
+    )
+    print("Model configuration:")
+    print(f"- d_model:    {d_model:>10}")
+    print(f"- n_layers:   {n_layers:>10}")
+    print(f"- n_heads:    {n_heads:>10}")
+    print(f"- batch_size: {batch_size:>10}")
+    print(f"- block_size: {block_size:>10}")
+    print(f"Total params: {n_params:>10,}\n")
 
-# Load trained weights if they exist
-try:
-    with open("out/weights.pkl", "rb") as f:
-        params = pickle.load(f)
-    print("Weights loaded from weights.pkl")
-except FileNotFoundError:
-    params = model.init_weights(d_model, block_size, len(vocab), n_heads, n_layers)
-    train(params, epochs, learning_rate)
+    # Load trained weights if they exist
+    try:
+        with open("out/weights.pkl", "rb") as f:
+            params = pickle.load(f)
+        print("Weights loaded from weights.pkl")
+    except FileNotFoundError:
+        params = model.init_weights(d_model, block_size, len(vocab), n_heads, n_layers)
+        train(encoded_data, params, epochs, learning_rate)
 
-# Inference & Generation
-n = len(encoded_data)
-L = 32
-start = np.random.randint(0, n - L + 1)
-sample = text[start : start + L]
-print("\nOutput:\n")
+    # Inference & Generation
+    n = len(encoded_data)
+    L = 32
+    start = np.random.randint(0, n - L + 1)
+    sample = text[start : start + L]
+    print("\nOutput:\n")
 
-viz_info = {}
-gen = model.generate_stream(
-    sample, vocab, params, max_new_tokens=1024, out_info=viz_info
-)
-for char in gen:
-    print(char, end="", flush=True)
+    viz_info = {}
+    gen = model.generate_stream(
+        sample, vocab, params, max_new_tokens=1024, out_info=viz_info
+    )
+    for char in gen:
+        print(char, end="", flush=True)
 
-print("\n---")
-
-# Attention visualization. Requires matplotlib
-utils.plot_multi_head_attention(vocab, viz_info)
+    # Attention visualization. Requires matplotlib
+    # utils.plot_multi_head_attention(vocab, viz_info)
