@@ -76,6 +76,8 @@ def train(encoded_data, params, epochs, learning_rate):
         pickle.dump(params, f)
     print("Weights saved to weights.pkl")
 
+    return params
+
 
 if __name__ == "__main__":
     """
@@ -112,7 +114,7 @@ if __name__ == "__main__":
         print("Weights loaded from weights.pkl")
     except FileNotFoundError:
         params = model.init_weights(d_model, block_size, len(vocab), n_heads, n_layers)
-        train(encoded_data, params, epochs, learning_rate)
+        params = train(encoded_data, params, epochs, learning_rate)
 
     # Inference & Generation
     n = len(encoded_data)
