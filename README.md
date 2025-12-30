@@ -2,9 +2,9 @@
 
 BareGPT is a Generative Pretrained Transformer developed for educational purposes, inspired by [nanoGPT](https://github.com/karpathy/nanoGPT) and the foundations of [GPT-1 (Radford et al., 2018)](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf).
 
-This project deliberately avoids deep learning frameworks: everything from the forward pass to the manual backpropagation is implemented from scratch in **less than 500 lines of NumPy**.
+The implementation is built exclusively with NumPy in under 500 lines of code, covering both the forward pass and manual backpropagation without external deep learning libraries.
 
-Because it does not rely on specific frameworks or specialized hardware, the model is ready to use immediately. A pre-trained weights file is included for instant testing, and a full training run can be completed on a standard CPU in under 30 minutes.
+The model does not require specialized hardware such as CUDA or MPS. Pre-trained weights are provided for testing, and a full training run can be completed on a standard CPU in less than 30 minutes under typical settings.
 
 ## Quick Start
 
